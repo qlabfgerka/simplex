@@ -16,23 +16,6 @@ int help() {
     return -1;
 }
 
-void displayMatrix(vector<vector<double>> matrix) {
-    for (int i = 0; i < matrix.size(); i++) {
-        for (int j = 0; j < matrix[i].size(); j++) {
-            cout << matrix[i][j] << " ";
-        }
-        cout << endl;
-    }
-    cout << endl;
-}
-
-void displayVector(vector<double> vector) {
-    for (int i = 0; i < vector.size(); i++) {
-        cout << vector[i] << " ";
-    }
-    cout << endl << endl;
-}
-
 int findMin(vector<double> vector, bool findIndex) {
     int min = INT_MAX, index = -1;
     for (int i = 0; i < vector.size(); i++) {
@@ -46,17 +29,12 @@ int findMin(vector<double> vector, bool findIndex) {
 }
 
 int positive(vector<double> c, vector<double> N) {
-    for (int i = 0; i < N.size(); i++) {
-        if (c[N[i]] > 0) return N[i];
-    }
-
+    for (int i = 0; i < N.size(); i++) if (c[N[i]] > 0) return N[i];
     return -1;
 }
 
 bool insideVector(vector<double> vector, int index) {
-    for (int i = 0; i < vector.size(); i++) {
-        if (vector[i] == index) return true;
-    }
+    for (int i = 0; i < vector.size(); i++) if (vector[i] == index) return true;
     return false;
 }
 
@@ -90,14 +68,8 @@ Simplex pivot(Simplex s, int l, int e) {
     }
     changed.c[l] = -s.c[e] * changed.A[e][l];
 
-
-    for (int i = 0; i < changed.N.size(); i++) {
-        if (changed.N[i] == e) changed.N[i] = l;
-    }
-
-    for (int i = 0; i < changed.B.size(); i++) {
-        if (changed.B[i] == l) changed.B[i] = e;
-    }
+    for (int i = 0; i < changed.N.size(); i++) if (changed.N[i] == e) changed.N[i] = l;
+    for (int i = 0; i < changed.B.size(); i++) if (changed.B[i] == l) changed.B[i] = e;
 
     return changed;
 }
@@ -106,9 +78,7 @@ int initializeSimplex(const string &filename, Simplex &s) {
     ifstream file(filename);
     int n, m, size;
 
-    if (!file.is_open()) {
-        return help();
-    }
+    if (!file.is_open()) return -2;
 
     file >> n >> m;
     size = n + m;
@@ -121,9 +91,7 @@ int initializeSimplex(const string &filename, Simplex &s) {
 
     for (int i = 0; i < size; i++) {
         s.A[i].resize(size);
-        for (int j = 0; j < size; j++) {
-            file >> s.A[i][j];
-        }
+        for (int j = 0; j < size; j++) file >> s.A[i][j];
     }
 
     for (int i = 0; i < size; i++) file >> s.b[i];
@@ -139,17 +107,16 @@ int initializeSimplex(const string &filename, Simplex &s) {
 
 int simplex(const string &filename) {
     Simplex s;
-    int e, l;
+    int e, l, error;
     double z;
     vector<double> deltas, results;
 
-    if (initializeSimplex(filename, s) != 0) return help();
-
-    /*displayMatrix(s.A);
-    displayVector(s.b);
-    displayVector(s.c);
-    displayVector(s.N);
-    displayVector(s.B);*/
+    error = initializeSimplex(filename, s);
+    if (error != 0) {
+        if (error == -2) cout << "Can\'t open file." << endl;
+        else if (error == -1) cout << "Negative value in vector b." << endl;
+        return help();
+    }
 
     deltas.resize(s.B.size());
 
@@ -162,16 +129,10 @@ int simplex(const string &filename) {
 
         l = findMin(deltas, true);
 
-        if (deltas[l] == INT_MAX || l == -1) return -1;
-        else s = pivot(s, s.B[l], e);
-
-        /*cout << "------------------" << endl;
-        displayMatrix(s.A);
-        displayVector(s.b);
-        displayVector(s.c);
-        displayVector(s.N);
-        displayVector(s.B);
-        cout << "------------------" << endl;*/
+        if (deltas[l] == INT_MAX || l == -1) {
+            cout << "Infinite program." << endl;
+            return help();
+        } else s = pivot(s, s.B[l], e);
     }
 
     results.resize(s.N.size() + s.B.size());
@@ -181,9 +142,9 @@ int simplex(const string &filename) {
     }
     z = s.v;
 
-    displayVector(results);
+    for (int i = 0; i < results.size(); i++) cout << "X" << i + 1 << ": " << results[i] << endl;
 
-    cout << z << endl;
+    cout << endl << "z: " << z << endl;
 
     return 0;
 }
